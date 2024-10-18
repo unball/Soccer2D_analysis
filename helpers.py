@@ -2,124 +2,9 @@ from typing import List, Tuple
 import pandas as pd
 import math
 
+from geom_2d import Point, Circle, distance
 
-class Point:
-    '''
-    A class to create a point somewhere in the field.
-    ...
-    Attributes
-    ----------
-    x: float
-        x coordinates of the point in the field
-    y: float
-        y coordinates of the point in the field
-    '''
-
-    def __init__(self, x=0.0, y=0.0):
-        '''
-        Constructs all the necessary attributes for the point object.
-        Parameters
-        ----------
-        x: float
-            x coordinates of the point in the field
-        y: float
-            y coordinates of the point in the field
-        '''
-        self.x = x
-        self.y = y
-
-    def __str__(self):
-        return "x: {} - y: {}".format(self.x, self.y)
-    
-class Circle:
-    """
-    The circle class
-
-    Circle(radius: float, center: socceranalyzer.common.geometric.point.Point)
-
-    Attributes
-    ----------
-            private:
-                radius : float
-                    the circle radius
-                center: socceranalyzer.common.geometric.point.Point
-                    the circle center point
-
-    Methods
-    -------
-            public:
-                is_inside(point : socceranalyzer.common.geometric.point.Point) -> bool
-                    checks if point is inside the circle
-                distance_to_center(point : socceranalyzer.common.geometric.point.Point) -> float
-                    computes distance from 'point' to center of the circle
-    """
-    def __init__(self, radius: float, center: Point):
-        self.__radius = radius
-        self.__center = center
-
-    @property
-    def radius(self):
-        return self.__radius
-
-    @radius.setter
-    def radius(self, r: float):
-        self.__radius = r
-
-    @property
-    def center(self):
-        return self.__center
-
-    @center.setter
-    def center(self, point: Point):
-        self.__center = point
-
-    def is_inside(self, point: Point):
-        """
-        Returns a boolean indicating if point is inside the circle.
-
-                Parameters:
-                        point (Point): Point of interest
-
-                Returns:
-                        is_inside (bool): Indicates if point is inside the circle.
-        """
-
-        dist = distance(self.__center, point)
-
-        if dist <= self.__radius:
-            return True
-        else:
-            return False
-
-    def distance_to_center(self, point: Point) -> float:
-        """
-        Returns a float indicating the distance between the point coordinates and the circle.
-
-                Parameters:
-                        point (Point): Point of interest
-
-                Returns:
-                        dist (float): Distance value.
-        """
-        return distance(self.__center, point)
-
-
-def distance(point: Point, position: Point) -> float:
-    """
-    Returns the distance between a point and the position of the object.
-
-            Parameters:
-                    point (Point): A Point object
-                    position (Point): Another Point object
-
-            Returns:
-                    dist (float): value of the distance
-    """
-    dist = math.sqrt(pow(position.x - point.x, 2) + pow(position.y - point.y, 2))
-
-    return dist
-
-def at(cycle: int, game: pd.DataFrame, players: List[List[Tuple[str, str]]]) -> str:
+def possession_at(cycle: int, game: pd.DataFrame, players: List[List[Tuple[str, str]]]) -> str:
   players_left = players[0]
   players_right = players[1]
 
@@ -350,3 +235,23 @@ def analyze_goalkeeper(dataframe, players: List[List[Tuple[str, str]]], team: st
     # average_distance = average_distance / adversary_goal_quantity
 
     return catches, adversary_goal_quantity, distances, ball_positions, goalie_positions 
+
+def analyze_stamina(dataframe: pd.DataFrame):
+
+    players_l_stamina_attr = []
+    players_r_stamina_attr = []
+    
+    for i in range(1, 12):
+        players_l_stamina_attr.append(f'player_l{i}_attribute_stamina')
+        players_r_stamina_attr.append(f'player_r{i}_attribute_stamina')
+
+    l_players_stamina = []
+    r_players_stamina = []
+    
+    for stamina_attr in players_l_stamina_attr:
+        l_players_stamina.append(dataframe[stamina_attr].tolist())
+
+    for stamina_attr in players_r_stamina_attr:
+        r_players_stamina.append(dataframe[stamina_attr].tolist())
+
+    return l_players_stamina, r_players_stamina
