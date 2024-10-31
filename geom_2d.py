@@ -1,3 +1,5 @@
+# adapted from https://github.com/robocin/SoccerAnalyzer
+
 import math 
 
 

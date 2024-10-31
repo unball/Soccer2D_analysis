@@ -1,3 +1,5 @@
+# adapted from https://github.com/robocin/SoccerAnalyzer
+
 from typing import Literal
 from pandas import DataFrame
 from math import sqrt, acos
@@ -325,8 +327,8 @@ class Shooting():
         print(f'{name_l}   |   {name_r}\n'
               f'{left_shots}   shots   {right_shots}\n'
               f'{left_on_target_shots}   on target   {right_on_target_shots}\n'
-              f'{left_xG}   xG   {right_xG}\n'
-              f'{left_xG/left_shots}   xG/Shot   {right_xG/right_shots}')
+              f'{left_xG:.1f}   xG   {right_xG:.1f}\n'
+              f'{left_xG/left_shots:.1f}   xG/Shot   {right_xG/right_shots:.1f}')
 
     def results(self) -> dict:
         """

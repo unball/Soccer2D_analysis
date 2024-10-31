@@ -1,3 +1,5 @@
+# adapted from https://github.com/robocin/SoccerAnalyzer
+
 """ 
 Módulo de análise de posse de bola, eventos e desempenho de jogadores em um jogo de futebol.
 Funções:
@@ -18,7 +20,6 @@ import math
 from geom_2d import Point, Circle, distance
 
 
-# substituir
 def possession_at(cycle: int, game: pd.DataFrame, players: List[List[Tuple[str, str]]]) -> str:
     """
     Determina qual lado (esquerdo ou direito) tem a posse da bola em um determinado ciclo do jogo.
@@ -81,28 +82,28 @@ def possession_at(cycle: int, game: pd.DataFrame, players: List[List[Tuple[str, 
 
     return closer_to_ball_side
 
-def define_player_possession(cycle, player_left_position: Point, player_right_position: Point, 
-                             players: List[List[Tuple[str, str]]], df: pd.DataFrame, player_who_possesses=False):
+def define_player_possession(cycle: int, players: List[List[Tuple[str, str]]],
+                              df: pd.DataFrame, player_who_possesses=False):
 
     """
-    Determines which player has possession of the ball at a given cycle.
+    Determina qual jogador tem a posse da bola em um determinado ciclo.
 
     Args:
-        cycle (int): The current cycle or time step in the game.
-        player_left_position (Point): The position of a player on the left team.
-        player_right_position (Point): The position of a player on the right team.
-        players (List[List[Tuple[str, str]]]): A list containing two lists of tuples. Each tuple contains the column names 
-                                                for the x and y positions of the players in the DataFrame. The first list 
-                                                is for the left team, and the second list is for the right team.
-        df (pd.DataFrame): The DataFrame containing the positions of the players and the ball.
-        player_who_possesses (bool, optional): If True, returns the team and the index of the player who possesses the ball. 
-                                                Defaults to False.
+        cycle (int): O ciclo no jogo.
+        player_left_position (Point): A posição de um jogador do time esquerdo.
+        player_right_position (Point): A posição de um jogador do time direito.
+        players (List[List[Tuple[str, str]]]): Uma lista contendo duas listas de tuplas. Cada tupla contém os nomes das colunas 
+                                                para as posições x e y dos jogadores no DataFrame. A primeira lista é para o time 
+                                                esquerdo, e a segunda lista é para o time direito.
+        df (pd.DataFrame): O DataFrame contendo as posições dos jogadores e da bola.
+        player_who_possesses (bool, opcional): Se True, retorna o time e o índice do jogador que possui a bola. 
+                                                Padrão é False.
 
-    Returns:
-        str or tuple: If player_who_possesses is False, returns 'left' or 'right' indicating which team has possession, 
-                        or None if no player has possession. If player_who_possesses is True, returns a tuple where the first 
-                        element is 'left' or 'right' and the second element is the index of the player who possesses the ball, 
-                        or (None, -1) if no player has possession.
+    Retorna:
+        str ou tupla: Se player_who_possesses for False, retorna 'left' ou 'right' indicando qual time tem a posse, 
+                        ou None se nenhum jogador tiver a posse. Se player_who_possesses for True, retorna uma tupla onde o 
+                        primeiro elemento é 'left' ou 'right' e o segundo elemento é o índice do jogador que possui a bola, 
+                        ou (None, -1) se nenhum jogador tiver a posse.
     """
 
     # constant
@@ -116,12 +117,14 @@ def define_player_possession(cycle, player_left_position: Point, player_right_po
 
     ball_zone = Circle(player_influence_radius, ball_position)
 
+    player_left_position = Point()
+    player_right_position = Point()
+
     # 10 players only because goalkeeper is not checked in this analysis
     for i in range(1, 11):
         player_left_position.x = df.loc[cycle, players_left[i][0]]
         player_left_position.y = df.loc[cycle, players_left[i][1]]
 
-        # left player has the ball
         if ball_zone.is_inside(player_left_position):
             if player_who_possesses:
                 return 'left', i+2
@@ -130,7 +133,6 @@ def define_player_possession(cycle, player_left_position: Point, player_right_po
         player_right_position.x = df.loc[cycle, players_right[i][0]]
         player_right_position.y = df.loc[cycle, players_right[i][1]]
 
-        # right player has the ball
         if ball_zone.is_inside(player_right_position):
             if player_who_possesses:
                 return 'right', i+2
@@ -193,7 +195,7 @@ def find_last_unique_event_ocurrences(dataframe, event):
 
     return event_ocurrences_index
 
-def analyze_fouls(dataframe: pd.DataFrame):
+def analyze_fouls(dataframe):
     """
     Analyzes the fouls in the given dataframe and returns the coordinates of the fouls.
     For every cycle in the log, this function investigates whether a foul happened and 
@@ -263,9 +265,9 @@ def goals(dataframe: pd.DataFrame, team=None) -> None:
             else:
                 right_team_goals.append(index)
 
-    if team == "team_l":
+    if team == "left":
         return left_team_goals
-    elif team == "team_r":
+    elif team == "right":
         return right_team_goals
     else:
         return goal_moments
@@ -408,3 +410,108 @@ def analyze_stamina(dataframe: pd.DataFrame):
         r_players_stamina.append(dataframe[stamina_attr].tolist())
 
     return l_players_stamina, r_players_stamina
+
+def analyse_passes(df, players, team): 
+
+    # Inicializa contadores para passes corretos, errados e interceptados para ambos os times
+    correct_passes_l = 0
+    wrong_passes_l = 0
+    intercepted_passes_l = 0
+
+    correct_passes_r = 0
+    wrong_passes_r = 0
+    intercepted_passes_r = 0
+
+    # Inicializa flags para indicar se um passe está em andamento
+    pass_r = False
+    pass_l = False
+
+    # Itera sobre cada ciclo de jogo
+    for current_cycle, row in df.iterrows():
+        # Verifica se um passe do time direito está em andamento
+        if not pass_r:
+            pass_r, player_who_kicked = kick(current_cycle, 'r', df, True) # Verifica se ocorreu um passe
+        else:
+            pass_l = False
+
+            # Verifica se a bola saiu pela lateral do time direito
+            if df['playmode'][current_cycle] == 'kick_in_l':
+                pass_r = False
+                wrong_passes_r += 1
+                continue
+
+            # Define a posse de bola
+            possession, player_who_possesses = define_player_possession(current_cycle, players, df, True)
+
+            # a posse de bola continua com o time direito
+            if possession == 'right':
+                pass_r = False
+                if player_who_kicked != player_who_possesses: # Conta apenas se o passe foi para outro jogador
+                    correct_passes_r += 1
+
+            # a bola foi interceptada pelo time esquerdo
+            if possession == 'left':
+                pass_r = False
+                intercepted_passes_l += 1
+                try:
+                    # Verifica se houve um kick_off ou foul_charge nos próximos 5 ciclos
+                    for l in range(5):
+                        if df['playmode'][current_cycle + l] in ['kick_off_l', 'foul_charge_l']:
+                            intercepted_passes_l -= 1
+                            break
+                except:
+                    pass
+
+        # Verifica se um passe do time esquerdo está em andamento
+        if not pass_l:
+            pass_l, player_who_kicked = kick(current_cycle, 'l', df, True) # Verifica se ocorreu um passe
+        else:
+            pass_r = False
+
+            # Verifica se a bola saiu pela lateral do time esquerdo
+            if df['playmode'][current_cycle] == 'kick_in_r':
+                pass_l = False
+                wrong_passes_l += 1
+                continue
+
+            # Define a posse de bola
+            possession, player_who_possesses = define_player_possession(current_cycle, players, df, True)
+            
+            # Se a posse de bola continua com o time esquerdo
+            if possession == 'left':
+                pass_l = False
+                if player_who_kicked != player_who_possesses: # Conta apenas se o passe foi para outro jogador
+                    correct_passes_l += 1
+
+            # Se a posse de bola foi interceptada pelo time direito
+            if possession == 'right':
+                pass_l = False
+                intercepted_passes_r += 1
+                try:
+                    # Verifica se houve um kick_off ou foul_charge nos próximos 5 ciclos
+                    for l in range(5):
+                        if df['playmode'][current_cycle + l] in ['kick_off_r', 'foul_charge_r']:
+                            intercepted_passes_r -= 1
+                            break
+                except:
+                    pass
+
+    if team == df['team_name_l'][0]:
+        return correct_passes_l, wrong_passes_l, intercepted_passes_l
+    elif team == df['team_name_r'][0]:
+        return correct_passes_r, wrong_passes_r, intercepted_passes_r
+    else:
+        raise ValueError("Cannot find team name.")
+
+def calculate_stamina_avg(team_stamina):
+    
+    stamina_avg = []
+    
+    for player_stamina in team_stamina:
+        player_stamina_sum = 0
+        for moment in player_stamina:
+            player_stamina_sum += moment
+
+        stamina_avg.append(player_stamina_sum/ len(player_stamina))
+
+    return stamina_avg
