@@ -7,7 +7,7 @@ Funções:
     - define_player_possession: Determina qual jogador tem a posse da bola em um determinado ciclo.
     - kick: Verifica se um jogador chutou a bola em um determinado ciclo.
     - find_last_unique_event_ocurrences: Encontra as últimas ocorrências únicas de um evento em um DataFrame.
-    - analyze_fouls: Analisa faltas cometidas durante o jogo e retorna as posições das faltas.
+    - analyze_fouls_charge: Analisa faltas cometidas durante o jogo e retorna as posições das faltas.
     - goals: Identifica os ciclos em que ocorreram gols e retorna os momentos dos gols.
     - analyze_goalkeeper: Analisa o desempenho do goleiro em relação aos gols sofridos.
     - analyze_stamina: Analisa a resistência dos jogadores ao longo do jogo.
@@ -125,6 +125,9 @@ def define_player_possession(cycle: int, players: List[List[Tuple[str, str]]],
         player_left_position.x = df.loc[cycle, players_left[i][0]]
         player_left_position.y = df.loc[cycle, players_left[i][1]]
 
+        if ball_zone.is_inside(player_left_position) and ball_zone.is_inside(player_right_position):
+            return None, -1
+
         if ball_zone.is_inside(player_left_position):
             if player_who_possesses:
                 return 'left', i+2
@@ -195,7 +198,7 @@ def find_last_unique_event_ocurrences(dataframe, event):
 
     return event_ocurrences_index
 
-def analyze_fouls(dataframe):
+def analyze_fouls_charge(dataframe):
     """
     Analyzes the fouls in the given dataframe and returns the coordinates of the fouls.
     For every cycle in the log, this function investigates whether a foul happened and 

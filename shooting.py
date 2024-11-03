@@ -12,7 +12,7 @@ from landmarks import Landmarks
 XG_MODEL_VARIABLES = ['angle','distance', 'players_in_between']
 XG_MODEL_PARAMS = [2.678591, 1.788279, -0.164496, -0.671407]
 
-class Shooting():
+class Shoot():
     """
         Used to calculate simple and advanced shooting stats for specified game.
 

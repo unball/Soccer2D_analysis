@@ -1,15 +1,15 @@
 # Soccer Simulation 2D Analysis
 
-## Usage
+## Uso
 
-First, create and activate a virtual environment
+Primeiro, crie e inicie um ambiente virtual
 
 ```
 virtualenv .venv
 source activate .venv/bin/activate
 ```
 
-Now, install the requirements for this project 
+Instale as dependências do projeto
 
 ```
 pip3 install -r requirements.txt
